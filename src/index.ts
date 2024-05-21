@@ -8,7 +8,7 @@ window.onload = (): void => {
     const app: App = App.getInstance(audioCtx);
     app.startScene();
 };
-
+//
 window.addEventListener('click', async (): Promise<void> => {
     await audioCtx.resume();
     await Tone.start();
