@@ -19,7 +19,7 @@ export class NetworkManager {
 
     // Players
     private _networkPlayers!: Y.Map<PlayerState>;
-    private _players = new Map<string, Player>();
+    public _players = new Map<string, Player>();
     public onPlayerChangeObservable = new B.Observable<{action: 'add' | 'delete', state: PlayerState}>();
 
     constructor(id: string) {

@@ -13,7 +13,7 @@ export abstract class AudioNode3D implements INetworkObject<AudioNodeState> {
     private readonly _pointerDragBehavior: B.PointerDragBehavior;
     protected _isModified: boolean = false;
     public baseMesh!: B.Mesh;
-
+    
     // Gizmo
     protected _rotationGizmo: B.RotationGizmo;
     protected _utilityLayer: B.UtilityLayerRenderer;
@@ -83,8 +83,14 @@ export abstract class AudioNode3D implements INetworkObject<AudioNodeState> {
 
         // move the wam in the scene
         this.baseMesh.actionManager.registerAction(new B.ExecuteCodeAction(B.ActionManager.OnLeftPickTrigger, (): void => {
+            console.log("current user:" , this._app.id)
+            console.log("users joined:" , this._app.networkManager._players.has)
+
+             if(this._app.networkManager._players.has(this._app.id)){
             this._isModified = true;
-            this.baseMesh.addBehavior(this._pointerDragBehavior);
+                this.baseMesh.addBehavior(this._pointerDragBehavior);
+
+             }
         }));
         this.baseMesh.actionManager.registerAction(new B.ExecuteCodeAction(B.ActionManager.OnPickUpTrigger, (): void => {
             this._isModified = false;
