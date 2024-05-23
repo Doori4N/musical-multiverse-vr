@@ -13,7 +13,7 @@ export abstract class AudioNode3D implements INetworkObject<AudioNodeState> {
     private readonly _pointerDragBehavior: B.PointerDragBehavior;
     protected _isModified: boolean = false;
     public baseMesh!: B.Mesh;
-
+    
     // Gizmo
     protected _rotationGizmo: B.RotationGizmo;
     protected _utilityLayer: B.UtilityLayerRenderer;
