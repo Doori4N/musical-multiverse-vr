@@ -1,9 +1,9 @@
 import * as B from "@babylonjs/core";
-import {IOEvent} from "../types.ts";
+import { IOEvent } from "../types";
 import * as GUI from "@babylonjs/gui";
-import {App} from "../App.ts";
-import {XRInputStates} from "../xr/types.ts";
-import {AudioNodeState, INetworkObject} from "../network/types.ts";
+import { App } from "../App";
+import { XRInputStates } from "../xr/types";
+import { AudioNodeState, INetworkObject } from "../network/types";
 
 export abstract class AudioNode3D implements INetworkObject<AudioNodeState> {
     public id!: string;
@@ -81,14 +81,20 @@ export abstract class AudioNode3D implements INetworkObject<AudioNodeState> {
             xrLeftInputStates['x-button'].onButtonStateChangedObservable.clear();
         }));
 
-        // move the wam in the scene
+        // Move the WAM in the scene with identity check
         this.baseMesh.actionManager.registerAction(new B.ExecuteCodeAction(B.ActionManager.OnLeftPickTrigger, (): void => {
-            this._isModified = true;
-            this.baseMesh.addBehavior(this._pointerDragBehavior);
+            if (this._app.isCurrentPlayer()) {
+                this._isModified = true;
+                this.baseMesh.addBehavior(this._pointerDragBehavior);
+                this._app.networkManager.sendModification(this.id, true);
+            }
         }));
         this.baseMesh.actionManager.registerAction(new B.ExecuteCodeAction(B.ActionManager.OnPickUpTrigger, (): void => {
-            this._isModified = false;
-            this.baseMesh.removeBehavior(this._pointerDragBehavior);
+            if (this._app.isCurrentPlayer()) {
+                this._isModified = false;
+                this.baseMesh.removeBehavior(this._pointerDragBehavior);
+                this._app.networkManager.sendModification(this.id, false);
+            }
         }));
     }
 

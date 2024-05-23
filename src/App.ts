@@ -156,4 +156,19 @@ export class App {
 
         this.networkManager.updatePlayerState(playerState);
     }
+
+    public isCurrentPlayer(): boolean {
+        // Logic to check if the current player is the one making modifications
+        return this.id === this.networkManager.getCurrentPlayerId();
+    }
+
+    // NetworkManager should have a method to get the current player ID
+    public getCurrentPlayerId(): string {
+        return this.networkManager.getCurrentPlayerId();
+    }
+
+    // Add method to send modification status to the network manager
+    public sendModification(nodeId: string, isModified: boolean): void {
+        this.networkManager.sendModification(nodeId, isModified);
+    }
 }
