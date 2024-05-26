@@ -22,7 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# use for ssl certificate on local dev
-localhost*
-vite.config.js
