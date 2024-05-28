@@ -24,7 +24,7 @@ export class IOManager {
             if (event.type === 'input') {
                 if (this._outputNode) {
                     if (event.node.id === this._outputNode.id) {
-                        alert("Can't connect a node to itself");
+                        console.log("Can't connect a node to itself");
                         this._outputNode = null;
                     }
                     else {
@@ -33,14 +33,14 @@ export class IOManager {
                     }
                 }
                 else if (this._inputNode) {
-                    alert("You have to connect an output node");
+                    console.log("You have to connect an output node");
                     this._inputNode = null;
                 }
             }
             else {
                 if (this._inputNode) {
                     if (event.node.id === this._inputNode.id) {
-                        alert("Can't connect a node to itself");
+                        console.log("Can't connect a node to itself");
                         this._inputNode = null;
                     }
                     else {
@@ -49,7 +49,7 @@ export class IOManager {
                     }
                 }
                 else if (this._outputNode) {
-                    alert("You have to connect an input node");
+                    console.log("You have to connect an input node");
                     this._outputNode = null;
                 }
             }
