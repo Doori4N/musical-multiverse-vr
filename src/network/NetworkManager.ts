@@ -13,13 +13,13 @@ export class NetworkManager {
     private readonly _id: string;
 
     // Audio nodes
-    private _networkAudioNodes3D!: Y.Map<AudioNodeState>;
-    private _audioNodes3D = new Map<string, AudioNode3D>();
+    private _networkAudioNodes3D!: Y.Map<AudioNodeState>; // network audio nodes
+    private _audioNodes3D = new Map<string, AudioNode3D>(); // local audio nodes
     public onAudioNodeChangeObservable = new B.Observable<{action: 'add' | 'delete', state: AudioNodeState}>();
 
     // Players
-    private _networkPlayers!: Y.Map<PlayerState>;
-    private _players = new Map<string, Player>();
+    private _networkPlayers!: Y.Map<PlayerState>; // network players
+    private _players = new Map<string, Player>(); // local players
     public onPlayerChangeObservable = new B.Observable<{action: 'add' | 'delete', state: PlayerState}>();
 
     constructor(id: string) {
@@ -27,7 +27,11 @@ export class NetworkManager {
         this._id = id;
     }
 
+    /**
+     * Connect to a room using the given room name
+    */
     public connect(roomName: string): void {
+        // Connect to the signaling server
         new WebrtcProvider(roomName, this._doc, {signaling: [SIGNALING_SERVER]});
 
         // Audio nodes
@@ -42,15 +46,22 @@ export class NetworkManager {
             event.changes.keys.forEach(this._onPlayerChange.bind(this));
         });
 
+        // Start the update loop
         setInterval(this._update.bind(this), TICK_RATE);
     }
 
+    /**
+     * Handle changes to the network audio nodes
+     */
     private _onAudioNode3DChange(change: {action: "add" | "update" | "delete", oldValue: any}, key: string): void {
         switch (change.action) {
+            // Add a new audio node
             case "add":
+                // If the audio node already exists, return
                 if (this._audioNodes3D.get(key)) return;
                 this.onAudioNodeChangeObservable.notifyObservers({action: 'add', state: this._networkAudioNodes3D.get(key)!});
                 break;
+            // Update an existing audio node
             case "update":
                 const state: AudioNodeState = this._networkAudioNodes3D.get(key)!;
                 this._audioNodes3D.get(key)!.setState(state);
@@ -62,13 +73,19 @@ export class NetworkManager {
         }
     }
 
+    /**
+     * Handle changes to the network players
+    */
     private _onPlayerChange(change: {action: "add" | "update" | "delete", oldValue: any}, key: string): void {
         if (key === this._id) return;
         switch (change.action) {
+            // Add a new player
             case "add":
+                // If the player already exists, return
                 if (this._players.get(key)) return;
                 this.onPlayerChangeObservable.notifyObservers({action: 'add', state: this._networkPlayers.get(key)!});
                 break;
+            // Update an existing player
             case "update":
                 const playerState: PlayerState = this._networkPlayers.get(key)!;
                 this._players.get(key)!.setState(playerState);
@@ -101,6 +118,10 @@ export class NetworkManager {
         return this._audioNodes3D.get(id);
     }
 
+    /**
+     * Add a new player locally
+     * @param player
+     */
     public addRemotePlayer(player: Player): void {
         this._players.set(player.id, player);
     }
@@ -110,17 +131,22 @@ export class NetworkManager {
     }
 
     /**
-     * Update the network with the latest audio node states
+     * Update remote audio nodes states with local states (if different)
      */
     private _update(): void {
         this._audioNodes3D.forEach((audioNode3D: AudioNode3D): void => {
             const state: AudioNodeState = audioNode3D.getState();
+
+            // if the local state is different from the network state, update the network state
             if (!this._compare(state, this._networkAudioNodes3D.get(state.id)!)) {
                 this._networkAudioNodes3D.set(state.id, state);
             }
         });
     }
 
+    /**
+     * Compare two audio node states and return true if they are the same
+     */
     private _compare(state1: AudioNodeState, state2: AudioNodeState): boolean {
         return JSON.stringify(state1) === JSON.stringify(state2);
     }
