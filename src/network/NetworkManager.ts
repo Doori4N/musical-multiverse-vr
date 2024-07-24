@@ -1,12 +1,12 @@
 import * as Y from 'yjs';
-import { WebrtcProvider } from 'y-webrtc';
+import {WebsocketProvider} from 'y-websocket';
 import * as B from "@babylonjs/core";
 import {AudioNodeState, PlayerState} from "./types.ts";
 import {AudioNode3D} from "../audioNodes3D/AudioNode3D.ts";
 import {Player} from "../Player.ts";
 
 const TICK_RATE: number = 1000 / 30;
-const SIGNALING_SERVER: string = 'wss://musical-multiverse-vr.onrender.com';
+const SERVER_URL: string = 'ws://localhost:4444/';
 
 export class NetworkManager {
     private readonly _doc: Y.Doc;
@@ -31,8 +31,8 @@ export class NetworkManager {
      * Connect to a room using the given room name
     */
     public connect(roomName: string): void {
-        // Connect to the signaling server
-        new WebrtcProvider(roomName, this._doc, {signaling: [SIGNALING_SERVER]});
+        // Connect to the server
+        new WebsocketProvider(SERVER_URL + roomName, roomName, this._doc);
 
         // Audio nodes
         this._networkAudioNodes3D = this._doc.getMap('audioNodes3D');

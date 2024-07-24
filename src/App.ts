@@ -61,7 +61,7 @@ export class App {
         return this._instance;
     }
 
-    public async startScene(): Promise<void> {
+    public async startScene(sessionName: string): Promise<void> {
         await this.xrManager.init(this.scene);
 
         this.engine.runRenderLoop((): void => {
@@ -108,7 +108,7 @@ export class App {
             }
         });
 
-        this.networkManager.connect('musical-multiverse');
+        this.networkManager.connect(sessionName);
         this.networkManager.onAudioNodeChangeObservable.add(this._onRemoteAudioNodeChange.bind(this));
         this.networkManager.onPlayerChangeObservable.add(this._onRemotePlayerChange.bind(this));
     }
