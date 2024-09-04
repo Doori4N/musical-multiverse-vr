@@ -152,7 +152,7 @@ export class IOManager {
         
         tube.isPickable = false;
   
-        const tubeParams: TubeParams = {options:optionsTube, TubeMesh: tube,OutputMesh:outputNode.outputMesh!,inputMesh: inputNode.inputMesh!,arrow:arrow,outputNode:outputNode,inputNode:inputNode} ;
+        const tubeParams: TubeParams = {name:tube.name,options:optionsTube, TubeMesh: tube,OutputMesh:outputNode.outputMesh!,inputMesh: inputNode.inputMesh!,arrow:arrow,outputNode:outputNode,inputNode:inputNode} ;
         outputNode.outputArcs.push(tubeParams);
         inputNode.inputArcs.push(tubeParams);
 

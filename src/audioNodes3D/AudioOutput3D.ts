@@ -44,13 +44,32 @@ export class AudioOutput3D extends AudioNode3D {
     }
 
     public getState(): AudioNodeState {
+        const inputNodes: string[] = [];
+        this.inputNodes.forEach((node: AudioNode3D): void => {
+            inputNodes.push(node.id);
+        });
+
+        const inputArcs : string[] = [];
+
+        this.inputArcs.forEach((arc: TubeParams)=>{
+            inputArcs.push(arc.name);
+        })
+        // const outputArcs : string[] = [];
+        // this.outputArcs.forEach((arc:TubeParams)=>{
+        //     outputArcs.push(arc.name);
+        // })
         return {
             id: this.id,
             name: 'audioOutput',
             position: { x: this.boundingBox.position.x, y: this.boundingBox.position.y, z: this.boundingBox.position.z },
             rotation: { x: this.boundingBox.rotation.x, y: this.boundingBox.rotation.y, z: this.boundingBox.rotation.z },
             inputNodes: [],
-            parameters: {}
+            parameters: {},
+            inputArcs:inputArcs,
+            outPutArcs:[]
+    
+
+
         };
     }
 

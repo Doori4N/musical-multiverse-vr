@@ -11,6 +11,8 @@ export type AudioNodeState = {
     rotation: { x: number, y: number, z: number };
     inputNodes: string[];
     parameters: { [name: string]: number };
+    inputArcs:string[];
+    outPutArcs:string[];
 }
 
 export type PlayerState = {

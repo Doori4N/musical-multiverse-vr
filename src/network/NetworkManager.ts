@@ -4,6 +4,7 @@ import * as B from "@babylonjs/core";
 import {AudioNodeState, PlayerState} from "./types.ts";
 import {AudioNode3D} from "../audioNodes3D/AudioNode3D.ts";
 import {Player} from "../Player.ts";
+import * as _  from 'lodash';
 
 const TICK_RATE: number = 1000 / 30;
 const SIGNALING_SERVER: string = 'wss://musical-multiverse-vr.onrender.com';
@@ -139,5 +140,7 @@ export class NetworkManager {
 
     private _compare(state1: AudioNodeState, state2: AudioNodeState): boolean {
         return JSON.stringify(state1) === JSON.stringify(state2);
+        // return _.isEqual(state1, state2);
+
     }
 }

@@ -4,6 +4,7 @@ import {CustomParameter, IParameter, IWamConfig, ParameterInfo, WamInstance} fro
 import {AudioNode3D} from "./AudioNode3D.ts";
 import {AudioNodeState} from "../network/types.ts";
 import { BoundingBox } from "./BoundingBox.ts";
+import { TubeParams } from "../types.ts";
 
 export class Wam3D extends AudioNode3D {
     private readonly _config: IWamConfig;
@@ -55,7 +56,7 @@ export class Wam3D extends AudioNode3D {
         this._createInput(new B.Vector3(-(this._usedParameters.length / 2 + 0.2), this.baseMesh.position.y, this.baseMesh.position.z));
         this._createOutput(new B.Vector3(this._usedParameters.length / 2 + 0.2, this.baseMesh.position.y, this.baseMesh.position.z));
         // shadow
-        // this._app.shadowGenerator.addShadowCaster(this.baseMesh);
+        this._app.shadowGenerator.addShadowCaster(this.baseMesh);
         // this.createBoundingBox();
         const bo  = new BoundingBox(this,this._scene,this.id,this._app)
         this.boundingBox = bo.boundingBox;
@@ -130,6 +131,16 @@ export class Wam3D extends AudioNode3D {
             inputNodes.push(node.id);
         });
 
+        const inputArcs : string[] = [];
+
+        this.inputArcs.forEach((arc: TubeParams)=>{
+            inputArcs.push(arc.name);
+        })
+        const outputArcs : string[] = [];
+        this.outputArcs.forEach((arc:TubeParams)=>{
+            outputArcs.push(arc.name);
+        })
+        
         return {
             id: this.id,
             configFile: this._configFile,
@@ -137,7 +148,9 @@ export class Wam3D extends AudioNode3D {
             position: { x: this.boundingBox.position.x, y: this.boundingBox.position.y, z: this.boundingBox.position.z },
             rotation: { x: this.boundingBox.rotation.x, y: this.boundingBox.rotation.y, z: this.boundingBox.rotation.z },
             inputNodes: inputNodes,
-            parameters: parameters
+            parameters: parameters,
+            inputArcs:inputArcs,
+            outPutArcs:outputArcs
         };
     }
 

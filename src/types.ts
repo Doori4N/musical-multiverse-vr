@@ -19,6 +19,7 @@ export type IOEvent = {
 
 
 export type TubeParams = {
+    name:string;
     options: {path: B.Vector3[]; updatable: boolean},
     TubeMesh: B.Mesh,
     OutputMesh: B.Mesh,
