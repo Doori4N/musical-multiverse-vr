@@ -31,6 +31,7 @@ export class Wam3D extends AudioNode3D {
     }
 
     public async instantiate(): Promise<void> {
+        console.log("test")
         this._wamInstance = await this._initWamInstance(this._config.url);
         this._parametersInfo = await this._wamInstance.audioNode._wamNode.getParameterInfo() as {[name: string]: ParameterInfo};
         this._paramBuilder = new ParamBuilder(this._scene, this._config);
