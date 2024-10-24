@@ -3,6 +3,7 @@ import {ParamBuilder} from "./parameters/ParamBuilder.ts";
 import {CustomParameter, IParameter, IWamConfig, ParameterInfo, WamInstance} from "./types.ts";
 import {AudioNode3D} from "./AudioNode3D.ts";
 import {AudioNodeState} from "../network/types.ts";
+import { BoundingBox } from "./BoundingBox.ts";
 
 export class Wam3D extends AudioNode3D {
     private readonly _config: IWamConfig;
@@ -12,11 +13,15 @@ export class Wam3D extends AudioNode3D {
     private _parameter3D: {[name: string]: IParameter} = {};
     private _paramBuilder!: ParamBuilder;
     private readonly _configFile!: string;
+    // public drag = new Drag(this._app)
 
     constructor(scene: B.Scene, audioCtx: AudioContext, id: string, config: IWamConfig, configFile: string) {
         super(scene, audioCtx, id);
         this._config = config;
         this._configFile = configFile;
+
+        
+    
     }
 
     private async _initWamInstance(wamUrl: string): Promise<WamInstance> {
@@ -31,13 +36,13 @@ export class Wam3D extends AudioNode3D {
     }
 
     public async instantiate(): Promise<void> {
-        console.log("test")
+        this._app.menu.hide();
         this._wamInstance = await this._initWamInstance(this._config.url);
         this._parametersInfo = await this._wamInstance.audioNode._wamNode.getParameterInfo() as {[name: string]: ParameterInfo};
         this._paramBuilder = new ParamBuilder(this._scene, this._config);
 
         this._usedParameters = this._config.customParameters.filter((param: CustomParameter): boolean => param.used);
-
+        
         this._createBaseMesh();
         for (let i: number = 0; i < this._usedParameters.length; i++) {
             await this._createParameter(this._usedParameters[i], i);
@@ -48,12 +53,18 @@ export class Wam3D extends AudioNode3D {
         this._rotationGizmo = new B.RotationGizmo(this._utilityLayer);
 
         this._initActionManager();
-
         this._createInput(new B.Vector3(-(this._usedParameters.length / 2 + 0.2), this.baseMesh.position.y, this.baseMesh.position.z));
         this._createOutput(new B.Vector3(this._usedParameters.length / 2 + 0.2, this.baseMesh.position.y, this.baseMesh.position.z));
-
+        
         // shadow
-        this._app.shadowGenerator.addShadowCaster(this.baseMesh);
+        // this._app.shadowGenerator.addShadowCaster(this.baseMesh);
+        // this._app.shadowGenerator.addShadowCaster(this.outputMesh!)
+        // this._app.shadowGenerator.addShadowCaster(this.inputMesh!)
+
+        // this.createBoundingBox();
+        const bo  = new BoundingBox(this,this._scene,this.id,this._app)
+        this.boundingBox = bo.boundingBox;
+        
     }
 
     protected _createBaseMesh(): void {
@@ -63,7 +74,12 @@ export class Wam3D extends AudioNode3D {
         const material = new B.StandardMaterial('material', this._scene);
         material.diffuseColor = new B.Color3(0, 0, 0);
         this.baseMesh.material = material;
+
     }
+
+
+
+
 
     private async _createParameter(param: CustomParameter, index: number): Promise<void> {
         const parameterStand: B.Mesh = this._createParameterStand(new B.Vector3(index - (this._usedParameters.length - 1) / 2, 0.1, this.baseMesh.position.z), param.name);
@@ -76,12 +92,11 @@ export class Wam3D extends AudioNode3D {
         switch (paramType) {
             case 'button':
                 parameter3D = await this._paramBuilder.createButton(param, parameterStand, this._parametersInfo[fullParamName]);
-                break;
+                                break;
             default:
                 parameter3D = this._paramBuilder.createCylinder(param, parameterStand, this._parametersInfo[fullParamName], defaultValue);
                 break;
         }
-
         // update audio node when parameter value changes
         parameter3D.onValueChangedObservable.add((value: number): void => {
             this._wamInstance.audioNode._wamNode.setParamValue(fullParamName, value);
@@ -100,6 +115,11 @@ export class Wam3D extends AudioNode3D {
         // @ts-ignore
         this._wamInstance.audioNode.connect(destination);
     }
+    public disconnect(destination: AudioNode): void {
+        // @ts-ignore
+        this._wamInstance.audioNode.disconnect(destination);
+    }
+
 
     public getState(): AudioNodeState {
         const parameters: {[name: string]: number} = {};
@@ -118,8 +138,8 @@ export class Wam3D extends AudioNode3D {
             id: this.id,
             configFile: this._configFile,
             name: this._config.name,
-            position: { x: this.baseMesh.position.x, y: this.baseMesh.position.y, z: this.baseMesh.position.z },
-            rotation: { x: this.baseMesh.rotation.x, y: this.baseMesh.rotation.y, z: this.baseMesh.rotation.z },
+            position: { x: this.boundingBox.position.x, y: this.boundingBox.position.y, z: this.boundingBox.position.z },
+            rotation: { x: this.boundingBox.rotation.x, y: this.boundingBox.rotation.y, z: this.boundingBox.rotation.z },
             inputNodes: inputNodes,
             parameters: parameters
         };
@@ -133,4 +153,5 @@ export class Wam3D extends AudioNode3D {
             this._parameter3D[fullParamName].setParamValue(state.parameters[fullParamName]);
         });
     }
+
 }

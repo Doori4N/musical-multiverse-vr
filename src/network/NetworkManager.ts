@@ -4,31 +4,37 @@ import * as B from "@babylonjs/core";
 import {AudioNodeState, PlayerState} from "./types.ts";
 import {AudioNode3D} from "../audioNodes3D/AudioNode3D.ts";
 import {Player} from "../Player.ts";
-
+import {Awareness} from 'y-protocols/awareness';
 const TICK_RATE: number = 1000 / 30;
-const SIGNALING_SERVER: string = 'wss://musical-multiverse-vr.onrender.com';
+const SIGNALING_SERVER: string = 'wss://musical-multiverse-vr.onrender.com'//'wss://musical-multiverse-vr.onrender.com';
 
 export class NetworkManager {
     private readonly _doc: Y.Doc;
     private readonly _id: string;
-
+    private awareness!: Awareness
     // Audio nodes
-    private _networkAudioNodes3D!: Y.Map<AudioNodeState>;
-    private _audioNodes3D = new Map<string, AudioNode3D>();
+    private _networkAudioNodes3D!: Y.Map<AudioNodeState>; // Network state
+    private _audioNodes3D = new Map<string, AudioNode3D>(); // local state
     public onAudioNodeChangeObservable = new B.Observable<{action: 'add' | 'delete', state: AudioNodeState}>();
 
     // Players
-    private _networkPlayers!: Y.Map<PlayerState>;
-    private _players = new Map<string, Player>();
+    private _networkPlayers!: Y.Map<PlayerState>; // Network state
+    private _players = new Map<string, Player>();// local state
     public onPlayerChangeObservable = new B.Observable<{action: 'add' | 'delete', state: PlayerState}>();
 
+    private _peerToPlayerMap = new Map<string, string>();
     constructor(id: string) {
         this._doc = new Y.Doc();
         this._id = id;
+        console.log("Current player id: " + this._id);
     }
 
     public connect(roomName: string): void {
-        new WebrtcProvider(roomName, this._doc, {signaling: [SIGNALING_SERVER]});
+        const provider = new WebrtcProvider(roomName, this._doc, {signaling: [SIGNALING_SERVER]});
+
+        this.awareness = provider.awareness;
+        this.awareness.setLocalStateField('playerId', this._id);
+        this.awareness.on('change', this._onAwarenessChange.bind(this));
 
         // Audio nodes
         this._networkAudioNodes3D = this._doc.getMap('audioNodes3D');
@@ -45,10 +51,41 @@ export class NetworkManager {
         setInterval(this._update.bind(this), TICK_RATE);
     }
 
+    // Method used to handle changes in Yjs awareness.
+    private _onAwarenessChange({ added, updated, removed }: { added: number[], updated: number[], removed: number[] }) {
+        // Get the current state of all peers
+        const states = this.awareness.getStates();
+
+        // Process added peers
+        added.concat(updated).forEach(peerId => {
+            console.log(`Peer ${peerId} connected.`);
+            const state = states.get(peerId);
+            if (state) {
+                console.log(state)
+                if (state.playerId) {
+                    this._peerToPlayerMap.set(String(peerId), state.playerId);
+                }
+            }
+            console.log(this._peerToPlayerMap)
+        });
+
+        // Handle removed peers
+        removed.forEach(peerId => {
+            console.log(`Peer ${peerId} disconnected.`);
+            const playerId = this._peerToPlayerMap.get(String(peerId));
+            if (playerId) {
+                this._players.get(playerId)!.dispose();
+                this._players.delete(playerId);
+                this._networkPlayers.delete(playerId);
+            }
+            this._peerToPlayerMap.delete(String(peerId));
+
+        });
+    }
     private _onAudioNode3DChange(change: {action: "add" | "update" | "delete", oldValue: any}, key: string): void {
         switch (change.action) {
             case "add":
-                if (this._audioNodes3D.get(key)) return;
+                if (this._audioNodes3D.has(key)) return;
                 this.onAudioNodeChangeObservable.notifyObservers({action: 'add', state: this._networkAudioNodes3D.get(key)!});
                 break;
             case "update":
@@ -56,6 +93,18 @@ export class NetworkManager {
                 this._audioNodes3D.get(key)!.setState(state);
                 break;
             case "delete":
+                if (this._audioNodes3D.has(key)) {
+                    const audioNode = this._audioNodes3D.get(key)!;
+                    
+                    // Notify any observers about the deletion
+                    this.onAudioNodeChangeObservable.notifyObservers({action: 'delete', state: change.oldValue});
+                    
+                    // Remove the node from the local state
+                    this._audioNodes3D.delete(key);
+                    
+                    // Call the delete method on the audio node to clean up resources
+                    audioNode.delete();
+                }
                 break;
             default:
                 break;
@@ -74,6 +123,12 @@ export class NetworkManager {
                 this._players.get(key)!.setState(playerState);
                 break;
             case "delete":
+                const player = this._players.get(key);
+                if (player) {
+                    player.dispose();
+                    this._players.delete(key);
+                    this.onPlayerChangeObservable.notifyObservers({action: 'delete', state: change.oldValue});
+                }
                 break;
             default:
                 break;
@@ -96,15 +151,24 @@ export class NetworkManager {
         const state: AudioNodeState = audioNode3D.getState();
         this._audioNodes3D.set(state.id, audioNode3D);
     }
-
     public getAudioNode3D(id: string): AudioNode3D | undefined {
         return this._audioNodes3D.get(id);
+    }
+    public removeNetworkAudioNode3D(id: string): void {
+        if (this._networkAudioNodes3D.has(id)) {
+            this._networkAudioNodes3D.delete(id);
+        }
     }
 
     public addRemotePlayer(player: Player): void {
         this._players.set(player.id, player);
     }
-
+    public getPlayer(id: string): Player | undefined {
+        return this._players.get(id);
+    }
+    public removeRemotePlayer(playerId: string): void {
+        this._players.delete(playerId);
+    }
     public updatePlayerState(playerState: PlayerState): void {
         this._networkPlayers.set(playerState.id, playerState);
     }

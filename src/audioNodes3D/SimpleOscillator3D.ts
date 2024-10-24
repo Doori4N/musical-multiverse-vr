@@ -4,6 +4,7 @@ import {CustomParameter, IAudioNodeConfig, IParameter, ParameterInfo} from "./ty
 import {ParamBuilder} from "./parameters/ParamBuilder.ts";
 import {AudioNode3D} from "./AudioNode3D.ts";
 import {AudioNodeState} from "../network/types.ts";
+import { BoundingBox } from "./BoundingBox.ts";
 
 export class SimpleOscillator3D extends AudioNode3D {
     private _oscillator!: Tone.Oscillator;
@@ -19,6 +20,7 @@ export class SimpleOscillator3D extends AudioNode3D {
     }
 
     public instantiate(): void {
+        this._app.menu.hide();
         if (!this._config.parametersInfo) throw new Error("Missing parametersInfo in config");
 
         this._parametersInfo = this._config.parametersInfo;
@@ -41,9 +43,17 @@ export class SimpleOscillator3D extends AudioNode3D {
         this._initActionManager();
 
         this._createOutput(new B.Vector3(this._usedParameters.length / 2 + 0.2, this.baseMesh.position.y, this.baseMesh.position.z));
-
+        const bo = new BoundingBox(this, this._scene, this.id, this._app);
+        this.boundingBox = bo.boundingBox;
+        // bo.addMovingBehaviourToBoundingBox();
         // shadow
-        this._app.shadowGenerator.addShadowCaster(this.baseMesh);
+        // this._app.shadowGenerator.addShadowCaster(this.baseMesh);
+    }
+
+    // disconnect each synth from the merger node
+    public disconnect(_destination: AudioNode): void {
+        this._oscillator.disconnect();
+
     }
 
     protected _createBaseMesh(): void {
@@ -127,8 +137,10 @@ export class SimpleOscillator3D extends AudioNode3D {
         return {
             id: this.id,
             name: 'simpleOscillator',
-            position: { x: this.baseMesh.position.x, y: this.baseMesh.position.y, z: this.baseMesh.position.z },
-            rotation: { x: this.baseMesh.rotation.x, y: this.baseMesh.rotation.y, z: this.baseMesh.rotation.z },
+            // position: { x: this.baseMesh.position.x, y: this.baseMesh.position.y, z: this.baseMesh.position.z },
+            // rotation: { x: this.baseMesh.rotation.x, y: this.baseMesh.rotation.y, z: this.baseMesh.rotation.z },
+            position: { x: this.boundingBox.position.x, y: this.boundingBox.position.y, z: this.boundingBox.position.z },
+            rotation: { x: this.boundingBox.rotation.x, y: this.boundingBox.rotation.y, z: this.boundingBox.rotation.z },
             inputNodes: inputNodes,
             parameters: parameters
         };

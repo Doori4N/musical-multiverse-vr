@@ -2,9 +2,12 @@ import * as B from "@babylonjs/core";
 import * as Tone from "tone";
 import {AudioNode3D} from "./AudioNode3D.ts";
 import {AudioNodeState} from "../network/types.ts";
+import { BoundingBox } from "./BoundingBox.ts";
+import {ControllerBehaviorManager} from "../xr/BehaviorControllerManager.ts";
 
 export class StepSequencer3D extends AudioNode3D {
-    private _synths!: Tone.Synth[];
+
+    public _synths!: Tone.Synth[];
     private _notes: string[] = ["C4", "D4", "E4", "F4"];
     private _grid: {mesh: B.Mesh, isActivated: boolean}[][] = [];
 
@@ -13,6 +16,11 @@ export class StepSequencer3D extends AudioNode3D {
     }
 
     public async instantiate(): Promise<void> {
+        try {
+        if (!this._scene || !this._audioCtx) {
+            throw new Error("Scene or AudioContext is not initialized.");
+        }
+        this._app.menu.hide();
         this._synths = Array.from({length: 4}, () => new Tone.Synth());
         Tone.Transport.start();
 
@@ -29,8 +37,37 @@ export class StepSequencer3D extends AudioNode3D {
 
         this._createOutput(new B.Vector3(this.baseMesh.position.x + 4.2, this.baseMesh.position.y, this.baseMesh.position.z));
 
+        const bo = new BoundingBox(this, this._scene, this.id, this._app);
+        this.boundingBox = bo.boundingBox;
+        ControllerBehaviorManager.addBoundingBox(bo);
         // shadow
-        this._app.shadowGenerator.addShadowCaster(this.baseMesh);
+        // this._app.shadowGenerator.addShadowCaster(this.baseMesh);
+        console.log("StepSequencer instantiated successfully.");
+    
+    } catch (error) {
+        console.error("Error instantiating StepSequencer: ", error);
+    }
+}
+    // disconnect each synth from the merger node
+    public disconnect(_destination: AudioNode): void {
+        this._synths.forEach((synth: Tone.Synth) => {
+            synth.disconnect();
+        });
+    }
+    
+    
+    public delete():void{
+     // Disconnect each synth from the merger node
+     this._synths.forEach((synth: Tone.Synth) => {
+        synth.disconnect();
+    });
+
+    // Disconnect the merger node from the audio context
+    const mergerNode = this.getAudioNode();
+    mergerNode.disconnect();
+
+    // Call the parent class's delete method to handle any additional cleanup
+    super.delete();
     }
 
     protected _createBaseMesh(): void {
@@ -51,6 +88,8 @@ export class StepSequencer3D extends AudioNode3D {
     }
 
     private _createNoteButton(row: number, column: number): void {
+        try{
+
         const buttonMesh: B.Mesh = B.MeshBuilder.CreateBox(`button${row}${column}`, { width: 0.8, height: 0.2, depth: 0.8 }, this._scene);
         buttonMesh.position.x = column - 3.5;
         buttonMesh.position.y = 0.1;
@@ -65,11 +104,17 @@ export class StepSequencer3D extends AudioNode3D {
         this._grid[row].push({mesh: buttonMesh, isActivated: false});
 
         // actions
-        buttonMesh.actionManager = new B.ActionManager(this._scene);
+        if(!buttonMesh.actionManager){
+        console.log("doesnt exist")
+            buttonMesh.actionManager = new B.ActionManager(this._scene);
+        }
         buttonMesh.actionManager.registerAction(new B.ExecuteCodeAction(B.ActionManager.OnPickTrigger, () => {
             this._grid[row][column].isActivated = !this._grid[row][column].isActivated;
             this._updateNoteColor(row, column);
         }));
+    }catch(e){
+        console.log("Error in action manager",e);
+    }
     }
 
     private _updateNoteColor(row: number, column: number): void {
@@ -112,6 +157,7 @@ export class StepSequencer3D extends AudioNode3D {
     public getAudioNode(): AudioNode {
         const merger: ChannelMergerNode = this._audioCtx.createChannelMerger(4);
         this._synths.forEach((synth: Tone.Synth, index: number) => synth.connect(merger, 0, index));
+        console.log("get audio node merger",merger)
         return merger;
     }
 
@@ -132,8 +178,10 @@ export class StepSequencer3D extends AudioNode3D {
         return {
             id: this.id,
             name: 'stepSequencer',
-            position: { x: this.baseMesh.position.x, y: this.baseMesh.position.y, z: this.baseMesh.position.z },
-            rotation: { x: this.baseMesh.rotation.x, y: this.baseMesh.rotation.y, z: this.baseMesh.rotation.z },
+            position: { x: this.boundingBox.position.x, y: this.boundingBox.position.y, z: this.boundingBox.position.z },
+            rotation: { x: this.boundingBox.rotation.x, y: this.boundingBox.rotation.y, z: this.boundingBox.rotation.z },
+            // position: { x: this.baseMesh.position.x, y: this.baseMesh.position.y, z: this.baseMesh.position.z },
+            // rotation: { x: this.baseMesh.rotation.x, y: this.baseMesh.rotation.y, z: this.baseMesh.rotation.z },
             inputNodes: inputNodes,
             parameters: parameters
         };
