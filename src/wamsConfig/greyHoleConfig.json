@@ -1,0 +1,11 @@
+{
+  "name": "Grey Hole",
+  "url": "https://www.webaudiomodules.com/community/plugins/wimmics/greyhole/index.js",
+  "root": "",
+  "customParameters": [
+  ],
+  "defaultParameter": {
+    "type": "cylinder",
+    "color": "#ff0000"
+  }
+}

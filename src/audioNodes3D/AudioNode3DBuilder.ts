@@ -6,8 +6,8 @@ import {AudioOutput3D} from "./AudioOutput3D.ts";
 import {Wam3D} from "./Wam3D.ts";
 import {StepSequencer3D} from "./StepSequencer3D.ts";
 
-// const WAM_CONFIGS_URL: string = "https://wam-configs.onrender.com";
-const WAM_CONFIGS_URL: string = "https://wam-configs.onrender.com";
+//const WAM_CONFIGS_URL: string = "https://wam-configs.onrender.com";
+const WAM_CONFIGS_URL: string = "http://localhost:5173/src/";
 
 export class AudioNode3DBuilder {
     constructor(private readonly _scene: B.Scene, private readonly _audioCtx: AudioContext) {}
@@ -30,13 +30,18 @@ export class AudioNode3DBuilder {
         }
         // WAMs
         else {
+            const config: IWamConfig = await import(/* @vite-ignore */`../wamsConfig/${configFile}.json`);
+            return new Wam3D(this._scene, this._audioCtx, id, config, configFile!);
+            /*
             const response: Response = await fetch(`${WAM_CONFIGS_URL}/wamsConfig/${configFile}`, {
                 method: "get",
                 headers: {"Content-Type": "application/json"}
             });
             const configString: string = await response.json();
+
             const config: IWamConfig = JSON.parse(configString);
             return new Wam3D(this._scene, this._audioCtx, id, config, configFile!);
+            */
         }
     }
 }
